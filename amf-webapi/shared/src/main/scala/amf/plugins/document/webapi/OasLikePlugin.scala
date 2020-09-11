@@ -5,6 +5,8 @@ import amf.core.model.document._
 import amf.plugins.document.webapi.contexts.emitter.OasLikeSpecEmitterContext
 import amf.plugins.document.webapi.contexts.parser.OasLikeWebApiContext
 
+import scala.collection.mutable
+
 trait OasLikePlugin extends BaseWebApiPlugin {
 
   override def specContext(options: RenderOptions): OasLikeSpecEmitterContext
@@ -13,13 +15,14 @@ trait OasLikePlugin extends BaseWebApiPlugin {
   // right positions of the AST.
   // We will try to promote these external fragments to data type fragments instead of just inlining them.
   def promoteFragments(unit: BaseUnit, ctx: OasLikeWebApiContext): BaseUnit = {
-    var oldReferences = unit.references.foldLeft(Map[String, BaseUnit]()) {
-      case (acc: Map[String, BaseUnit], e: BaseUnit) =>
-        acc + (e.location().getOrElse(e.id) -> e)
+    var oldReferences = unit.references.foldLeft(mutable.LinkedHashMap[String, BaseUnit]()) {
+      case (acc: mutable.LinkedHashMap[String, BaseUnit], e: BaseUnit) =>
+        acc.put(e.location().getOrElse(e.id), e)
+        acc
     }
     ctx.declarations.promotedFragments.foreach { promoted =>
       val key = promoted.location().getOrElse(promoted.id)
-      oldReferences = oldReferences + (key -> promoted)
+      oldReferences.put(key, promoted)
     }
 
     if (oldReferences.values.nonEmpty)

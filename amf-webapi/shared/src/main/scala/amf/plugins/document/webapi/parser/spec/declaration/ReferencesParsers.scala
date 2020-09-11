@@ -16,15 +16,11 @@ import scala.collection.mutable
 /**
   *
   */
-object ReferenceDeclarations {
-  def apply(references: mutable.Map[String, BaseUnit])(implicit ctx: WebApiContext) =
-    new ReferenceDeclarations(references)
+case class ReferenceDeclarations()(implicit ctx: WebApiContext) {
 
-  def apply()(implicit ctx: WebApiContext): ReferenceDeclarations = apply(mutable.Map[String, BaseUnit]())
-}
+  private val references: mutable.Map[String, BaseUnit] = mutable.LinkedHashMap()
 
-case class ReferenceDeclarations(references: mutable.Map[String, BaseUnit] = mutable.Map())(
-    implicit ctx: WebApiContext) {
+  def nonEmpty: Boolean = references.nonEmpty
 
   def +=(alias: String, unit: BaseUnit): Unit = {
     references += (alias -> unit)
@@ -42,7 +38,7 @@ case class ReferenceDeclarations(references: mutable.Map[String, BaseUnit] = mut
 
   def +=(url: String, fragment: Document): Unit = references += (url -> fragment)
 
-  def solvedReferences(): Seq[BaseUnit] = references.values.toSet.toSeq
+  def solvedReferences(): Seq[BaseUnit] = references.values.toSeq.distinct
 }
 
 case class ReferencesParser(baseUnit: BaseUnit, key: String, map: YMap, references: Seq[ParsedReference])(
